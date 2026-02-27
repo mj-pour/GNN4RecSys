@@ -16,20 +16,15 @@ A PyTorch framework for graph-based recommender systems, extending the original 
 
 ---
 
-## Installation
-
-```bash
-pip install -r requirements.txt
-
 ## Enviroment Requirement
 
 `pip install -r requirements.txt`
+
+---
 
 ## An example to run a 3-layer attlgn
 
 run **Attentive LightGCN** on **Movielens** dataset:
 
-* command
-
-` cd code && python main.py --model="attlgn" --dataset="movielens-100k" --layer=3 --recdim=64 --lr=0.001 --decay=1e-4 --topks="[10]" --testbatch=10 --bpr_batch=512 --epochs=500`
+`cd code && python main.py --model="attlgn" --dataset="movielens-100k" --layer=3 --recdim=64 --lr=0.001 --decay=1e-4 --topks="[10]" --testbatch=10 --bpr_batch=512 --epochs=500`
 
