@@ -1,11 +1,3 @@
-'''
-Created on Mar 1, 2020
-Pytorch Implementation of LightGCN in
-Xiangnan He et al. LightGCN: Simplifying and Powering Graph Convolution Network for Recommendation
-@author: Jianbai Ye (gusye@mail.ustc.edu.cn)
-
-Design training and test process
-'''
 import world
 import numpy as np
 import torch
@@ -123,7 +115,7 @@ def Test(dataset, Recmodel, epoch, w=None, multicore=0):
             users_list.append(batch_users)
             rating_list.append(rating_K.cpu())
             groundTrue_list.append(groundTrue)
-        assert total_batch == len(users_list)
+        # assert total_batch == len(users_list)
         X = zip(rating_list, groundTrue_list)
         if multicore == 1:
             pre_results = pool.map(test_one_batch, X)

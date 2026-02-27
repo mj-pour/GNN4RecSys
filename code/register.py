@@ -8,6 +8,11 @@ if world.dataset in ['gowalla', 'yelp2018', 'amazon-book']:
     dataset = dataloader.Loader(path="../data/"+world.dataset)
 elif world.dataset == 'lastfm':
     dataset = dataloader.LastFM()
+elif world.dataset == 'synthetic':
+    dataset = dataloader.Loader(path="../data/synthetic")
+elif world.dataset == 'movielens-100k':
+    dataset = dataloader.Loader(path="../data/movielens-100k")
+
 
 print('===========config================')
 pprint(world.config)
@@ -22,5 +27,6 @@ print('===========end===================')
 
 MODELS = {
     'mf': model.PureMF,
-    'lgn': model.LightGCN
+    'lgn': model.LightGCN,
+    'attlgn': model.AttentiveLightGCN
 }

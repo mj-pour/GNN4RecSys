@@ -1,12 +1,3 @@
-"""
-Created on Mar 1, 2020
-Pytorch Implementation of LightGCN in
-Xiangnan He et al. LightGCN: Simplifying and Powering Graph Convolution Network for Recommendation
-
-@author: Jianbai Ye (gusye@mail.ustc.edu.cn)
-
-Define models here
-"""
 import world
 import torch
 from dataloader import BasicDataset
@@ -213,3 +204,93 @@ class LightGCN(BasicModel):
         inner_pro = torch.mul(users_emb, items_emb)
         gamma     = torch.sum(inner_pro, dim=1)
         return gamma
+
+class AttentiveLightGCN(LightGCN):
+    """
+    LightGCN with single-head, numerically stable attention.
+    Uses non-negative weights (softplus) and simple normalization
+    instead of exp/softmax to avoid NaN/Inf issues.
+    """
+
+    def __init__(self, config: dict, dataset: BasicDataset):
+        super(AttentiveLightGCN, self).__init__(config, dataset)
+
+        self.att_dim = self.latent_dim
+
+        self.W = nn.Linear(self.latent_dim, self.att_dim, bias=False)
+        self.att_vector = nn.Parameter(
+            torch.randn(self.att_dim * 2) * 0.01
+        )
+
+        if self.A_split:
+            world.cprint("Warning: AttentiveLightGCN assumes A_split = False.")
+
+    def _get_graph_indices(self):
+        idx = self.Graph.indices()
+        row, col = idx[0], idx[1]
+        return row, col
+
+    def attention_propagation(self, all_emb):
+        """
+        Single-head attention with:
+        - L2-normalized embeddings
+        - linear projection
+        - softplus (non-negative) weights
+        - simple sum-normalization per node
+        No exp/softmax → very stable.
+        """
+        row, col = self._get_graph_indices()
+        num_nodes = all_emb.size(0)
+
+        # Normalize embeddings
+        all_emb = torch.nn.functional.normalize(all_emb, p=2, dim=1)
+
+        # Linear projection
+        Wh = self.W(all_emb)
+
+        Wh_row = Wh[row]
+        Wh_col = Wh[col]
+
+        concat = torch.cat([Wh_row, Wh_col], dim=1)
+
+        # Raw logits
+        logits = torch.matmul(concat, self.att_vector)
+
+        # Scale and clamp to keep them tame
+        logits = logits / (self.att_dim ** 0.5)
+        logits = torch.clamp(logits, -5.0, 5.0)
+
+        # Non-negative weights (no exp)
+        weights = torch.nn.functional.softplus(logits)  # >= 0
+
+        # Normalize per source node (row)
+        norm = torch.zeros(num_nodes, device=weights.device)
+        norm.index_add_(0, row, weights)
+        norm = norm + 1e-9  # avoid division by zero
+
+        weights = weights / norm[row]
+
+        # Aggregate neighbor embeddings
+        out = torch.zeros_like(all_emb)
+        out.index_add_(0, row, weights.unsqueeze(1) * all_emb[col])
+
+        return out
+
+    def computer(self):
+        users_emb = self.embedding_user.weight
+        items_emb = self.embedding_item.weight
+        all_emb = torch.cat([users_emb, items_emb], dim=0)
+
+        embs = [all_emb]
+
+        for _ in range(self.n_layers):
+            all_emb = self.attention_propagation(all_emb)
+            embs.append(all_emb)
+
+        embs = torch.stack(embs, dim=1)
+        light_out = torch.mean(embs, dim=1)
+
+        users, items = torch.split(
+            light_out, [self.num_users, self.num_items], dim=0
+        )
+        return users, items

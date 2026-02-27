@@ -1,11 +1,3 @@
-'''
-Created on Mar 1, 2020
-Pytorch Implementation of LightGCN in
-Xiangnan He et al. LightGCN: Simplifying and Powering Graph Convolution Network for Recommendation
-
-@author: Jianbai Ye (gusye@mail.ustc.edu.cn)
-'''
-
 import os
 from os.path import join
 import torch
@@ -30,8 +22,8 @@ if not os.path.exists(FILE_PATH):
 
 
 config = {}
-all_dataset = ['lastfm', 'gowalla', 'yelp2018', 'amazon-book']
-all_models  = ['mf', 'lgn']
+all_dataset = ['lastfm', 'gowalla', 'yelp2018', 'amazon-book', 'synthetic', 'movielens-100k']
+all_models = ['mf', 'lgn', 'attlgn']
 # config['batch_size'] = 4096
 config['bpr_batch_size'] = args.bpr_batch
 config['latent_dim_rec'] = args.recdim
@@ -76,15 +68,3 @@ simplefilter(action="ignore", category=FutureWarning)
 
 def cprint(words : str):
     print(f"\033[0;30;43m{words}\033[0m")
-
-logo = r"""
-██╗      ██████╗ ███╗   ██╗
-██║     ██╔════╝ ████╗  ██║
-██║     ██║  ███╗██╔██╗ ██║
-██║     ██║   ██║██║╚██╗██║
-███████╗╚██████╔╝██║ ╚████║
-╚══════╝ ╚═════╝ ╚═╝  ╚═══╝
-"""
-# font: ANSI Shadow
-# refer to http://patorjk.com/software/taag/#p=display&f=ANSI%20Shadow&t=Sampling
-# print(logo)
